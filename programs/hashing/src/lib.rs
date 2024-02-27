@@ -30,5 +30,5 @@ pub struct Vote<'info> {
 
 #[account]
 pub struct State {
-    votes: u64,
+    votes: i64,
 }

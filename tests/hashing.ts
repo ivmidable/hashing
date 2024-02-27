@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
+import { createHash } from "crypto";
 import { Hashing } from "../target/types/hashing";
 
 describe("hashing", () => {
@@ -9,19 +10,20 @@ describe("hashing", () => {
 
   const program = anchor.workspace.Hashing as Program<Hashing>;
 
-  it("Up vote google.com", async () => {
-    let g_hash = anchor.utils.sha256.hash("google.com");
-    let g_hash_key = new anchor.web3.PublicKey(g_hash);
-    // Add your test here.
-    let state = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("state"), g_hash_key.toBuffer()],
-      program.programId
-    )[0];
+  const hash = createHash("sha256");
+  hash.update(Buffer.from("google.com"));
+  let hash_key = new anchor.web3.PublicKey(hash.digest());
 
+  let state = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("state"), hash_key.toBuffer()],
+    program.programId
+  )[0];
+
+  it("Up vote google.com", async () => {
     const tx = await program.methods
       .upVote()
       .accounts({
-        hash: g_hash_key,
+        hash: hash_key,
         payer: provider.publicKey,
         state,
         systemProgram: anchor.web3.SystemProgram.programId,
@@ -31,18 +33,16 @@ describe("hashing", () => {
   });
 
   it("Down vote google.com", async () => {
-    let g_hash = anchor.utils.sha256.hash("google.com");
-    let g_hash_key = new anchor.web3.PublicKey(g_hash);
     // Add your test here.
     let state = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("state"), g_hash_key.toBuffer()],
+      [Buffer.from("state"), hash_key.toBuffer()],
       program.programId
     )[0];
 
     const tx = await program.methods
       .downVote()
       .accounts({
-        hash: g_hash_key,
+        hash: hash_key,
         payer: provider.publicKey,
         state,
         systemProgram: anchor.web3.SystemProgram.programId,
